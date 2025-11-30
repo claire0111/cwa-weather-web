@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>台灣即時天氣 Dashboard（GitHub Pages 範例）</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #summary { background: #eef; padding: 15px; border-radius: 8px; margin-top: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+  </style>
+</head>
+<body>
+  <h1>🇹🇼 台灣即時天氣資訊（GitHub Pages 前端示範）</h1>
+
+  <p>此頁面可直接 push 到 GitHub Pages 部署。<br>
+  ⚠️ 請在下方輸入你的中央氣象署 API Key（不會被儲存）。</p>
+
+  <label>中央氣象署 CWA API Key：</label>
+  <input type="password" id="apiKey" placeholder="CWB-XXXXXXXXXXXX" style="width: 260px;">
+  <button onclick="loadData()">載入資料</button>
+
+  <div id="loading" style="display:none; margin-top:15px;">讀取中...請稍候</div>
+
+  <div id="summary"></div>
+  <div id="tableContainer"></div>
+
+<script>
+async function loadData() {
+  const key = document.getElementById("apiKey").value.trim();
+  if (!key) { alert("請輸入 API Key"); return; }
+
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("summary").innerHTML = "";
+  document.getElementById("tableContainer").innerHTML = "";
+
+  const url = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0001-001?Authorization=${key}&format=JSON`;
+
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    const locations = json.records.location;
+
+    let rows = "";
+    let hottest = null;
+    let coldest = null;
+
+    locations.forEach(loc => {
+      const elements = {};
+      loc.weatherElement.forEach(e => { elements[e.elementName] = e.elementValue; });
+
+      const temp = parseFloat(elements.TEMP);
+      const humd = parseFloat(elements.HUMD);
+
+      if (!isNaN(temp)) {
+        if (!hottest || temp > hottest.temp) hottest = { name: loc.locationName, temp };
+        if (!coldest || temp < coldest.temp) coldest = { name: loc.locationName, temp };
+      }
+
+      rows += `<tr>
+        <td>${loc.locationName}</td>
+        <td>${temp ?? '-'}</td>
+        <td>${humd ?? '-'}</td>
+      </tr>`;
+    });
+
+    document.getElementById("summary").innerHTML = `
+      <h3>自動摘要</h3>
+      <p>目前最高溫：${hottest?.name}（${hottest?.temp}°C）<br>
+      最低溫：${coldest?.name}（${coldest?.temp}°C）</p>
+      <p>建議：外出請留意溫度變化，適時增減衣物。</p>
+    `;
+
+    document.getElementById("tableContainer").innerHTML = `
+      <h3>全台測站氣象資料</h3>
+      <table>
+        <tr><th>測站</th><th>溫度 (°C)</th><th>濕度 (%)</th></tr>
+        ${rows}
+      </table>
+    `;
+
+  } catch (e) {
+    alert("載入失敗：" + e);
+  }
+
+  document.getElementById("loading").style.display = "none";
+}
+</script>
+</body>
+</html>
