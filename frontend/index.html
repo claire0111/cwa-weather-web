@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>溫柔天氣小助理</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f8ff; padding: 20px; }
+        h1 { color: #2c3e50; }
+        input, button { padding: 8px; font-size: 16px; margin: 5px 0; }
+        #summary { margin-top: 20px; padding: 10px; background-color: #e0f7fa; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>溫柔天氣小助理 🌤️</h1>
+
+    <label for="city">請輸入縣市名稱：</label><br>
+    <input type="text" id="city" value="花蓮縣">
+    <button onclick="getWeather()">查詢天氣</button>
+
+    <div id="summary"></div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById("city").value;
+            const summaryDiv = document.getElementById("summary");
+            summaryDiv.textContent = "正在查詢中...";
+
+            try {
+                const response = await fetch(`http://localhost:8080/weather-summary?city=${city}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    summaryDiv.textContent = data.error;
+                } else {
+                    summaryDiv.innerHTML = `
+                        <p><strong>縣市：</strong>${data.city}</p>
+                        <p><strong>天氣：</strong>${data.description}</p>
+                        <p><strong>溫度：</strong>${data.temperature}°C</p>
+                        <p><strong>濕度：</strong>${data.humidity}%</p>
+                        <p><strong>雨量：</strong>${data.precipitation} mm</p>
+                        <p><strong>溫柔描述：</strong>${data.summary}</p>
+                    `;
+                }
+            } catch (error) {
+                summaryDiv.textContent = "發生錯誤：" + error;
+            }
+        }
+    </script>
+</body>
+</html>
